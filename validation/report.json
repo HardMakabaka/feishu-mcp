@@ -1,0 +1,38 @@
+{
+  "verificationDate": "2026-09-11",
+  "artifact": "feishu-knowledge-mcp-fusion",
+  "version": "0.2.0",
+  "environment": {
+    "node": "v22.16.0",
+    "npm": "10.9.2",
+    "git": "git version 2.47.3"
+  },
+  "offlineTests": {
+    "tests": 86,
+    "pass": 86,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "syntaxChecks": {
+    "passed": 32,
+    "total": 32,
+    "kind": "node --check on own .mjs files; not TypeScript checking"
+  },
+  "sourceReview": {
+    "pinnedCommitsAndSeamFilesRead": true,
+    "completeUpstreamSourceBundled": false
+  },
+  "notRun": [
+    "upstream npm dependency installation",
+    "full TypeScript check and build of both upstream source bridges",
+    "real MCP SDK stdio handshake and tool registration smoke test",
+    "real Feishu OAuth/token refresh",
+    "live document/Wiki/media read and write tests",
+    "upstream complete test suites"
+  ],
+  "reason": "The delivery environment cannot resolve GitHub/npm download hosts and runs Node 22 rather than the required Node 24; no user Feishu credentials or test documents were provided.",
+  "installOnLocalComputer": "npm run setup",
+  "important": "This is an implemented source-integration kit, not a prebuilt fully verified offline distribution. Test doubles validate local logic, not upstream service behavior."
+}

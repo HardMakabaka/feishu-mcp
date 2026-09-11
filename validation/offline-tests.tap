@@ -1,0 +1,526 @@
+TAP version 13
+# Subtest: document references resolve only Feishu docx/wiki URLs
+ok 1 - document references resolve only Feishu docx/wiki URLs
+  ---
+  duration_ms: 1.975203
+  type: 'test'
+  ...
+# Subtest: GET retries transient HTTP failures with a finite attempt count
+ok 2 - GET retries transient HTTP failures with a finite attempt count
+  ---
+  duration_ms: 24.072164
+  type: 'test'
+  ...
+# Subtest: GET network retries are bounded
+ok 3 - GET network retries are bounded
+  ---
+  duration_ms: 0.440088
+  type: 'test'
+  ...
+# Subtest: write network errors are never automatically retried
+ok 4 - write network errors are never automatically retried
+  ---
+  duration_ms: 0.248614
+  type: 'test'
+  ...
+# Subtest: write 429 is not retried
+ok 5 - write 429 is not retried
+  ---
+  duration_ms: 0.97757
+  type: 'test'
+  ...
+# Subtest: write malformed response is treated as unknown outcome
+ok 6 - write malformed response is treated as unknown outcome
+  ---
+  duration_ms: 1.166531
+  type: 'test'
+  ...
+# Subtest: Feishu non-zero code fails even when HTTP status is 200
+ok 7 - Feishu non-zero code fails even when HTTP status is 200
+  ---
+  duration_ms: 0.821598
+  type: 'test'
+  ...
+# Subtest: safe batch patch includes the expected document revision
+ok 8 - safe batch patch includes the expected document revision
+  ---
+  duration_ms: 0.642063
+  type: 'test'
+  ...
+# Subtest: snapshot fetches all pages at a fixed revision
+ok 9 - snapshot fetches all pages at a fixed revision
+  ---
+  duration_ms: 3.065715
+  type: 'test'
+  ...
+# Subtest: snapshot rejects a revision change between pages and final metadata read
+ok 10 - snapshot rejects a revision change between pages and final metadata read
+  ---
+  duration_ms: 3.673495
+  type: 'test'
+  ...
+# Subtest: pagination loops are detected
+ok 11 - pagination loops are detected
+  ---
+  duration_ms: 2.004114
+  type: 'test'
+  ...
+# Subtest: missing revision is not silently replaced with -1
+ok 12 - missing revision is not silently replaced with -1
+  ---
+  duration_ms: 0.5206
+  type: 'test'
+  ...
+# Subtest: Wiki non-docx objects are rejected
+ok 13 - Wiki non-docx objects are rejected
+  ---
+  duration_ms: 0.429889
+  type: 'test'
+  ...
+# Subtest: request errors do not include the authorization header
+ok 14 - request errors do not include the authorization header
+  ---
+  duration_ms: 0.35882
+  type: 'test'
+  ...
+# Subtest: section ends at next same-level heading and contains nested subsections
+ok 15 - section ends at next same-level heading and contains nested subsections
+  ---
+  duration_ms: 2.502676
+  type: 'test'
+  ...
+# Subtest: subsection range stops before its parent-level sibling
+ok 16 - subsection range stops before its parent-level sibling
+  ---
+  duration_ms: 0.378266
+  type: 'test'
+  ...
+# Subtest: duplicate headings require an explicit block ID
+ok 17 - duplicate headings require an explicit block ID
+  ---
+  duration_ms: 0.860054
+  type: 'test'
+  ...
+# Subtest: outline is based on tree order, not input array order
+ok 18 - outline is based on tree order, not input array order
+  ---
+  duration_ms: 0.538467
+  type: 'test'
+  ...
+# Subtest: text edit preserves uniform inline style
+ok 19 - text edit preserves uniform inline style
+  ---
+  duration_ms: 1.509155
+  type: 'test'
+  ...
+# Subtest: mixed inline styles are rejected unless explicitly allowed
+ok 20 - mixed inline styles are rejected unless explicitly allowed
+  ---
+  duration_ms: 0.786224
+  type: 'test'
+  ...
+# Subtest: formula-containing blocks are never flattened by a plain-text patch
+ok 21 - formula-containing blocks are never flattened by a plain-text patch
+  ---
+  duration_ms: 0.350469
+  type: 'test'
+  ...
+# Subtest: wrong text and duplicate target IDs are rejected
+ok 22 - wrong text and duplicate target IDs are rejected
+  ---
+  duration_ms: 0.392346
+  type: 'test'
+  ...
+# Subtest: table cell paragraph can be targeted without editing the table container
+ok 23 - table cell paragraph can be targeted without editing the table container
+  ---
+  duration_ms: 0.887693
+  type: 'test'
+  ...
+# Subtest: plain export includes content and headings without duplicating children
+ok 24 - plain export includes content and headings without duplicating children
+  ---
+  duration_ms: 0.944273
+  type: 'test'
+  ...
+# Subtest: local callback requires an explicit unprivileged port
+ok 25 - local callback requires an explicit unprivileged port
+  ---
+  duration_ms: 3.543787
+  type: 'test'
+  ...
+# Subtest: a public callback is refused by the local-only configuration
+ok 26 - a public callback is refused by the local-only configuration
+  ---
+  duration_ms: 2.674914
+  type: 'test'
+  ...
+# Subtest: upstream environment is local, single-app, no generic retries or telemetry truthy string
+ok 27 - upstream environment is local, single-app, no generic retries or telemetry truthy string
+  ---
+  duration_ms: 1.900483
+  type: 'test'
+  ...
+# Subtest: invalid module names fail before loading upstreams
+ok 28 - invalid module names fail before loading upstreams
+  ---
+  duration_ms: 2.015931
+  type: 'test'
+  ...
+# Subtest: queue drain waits for in-flight work to persist before releasing a process lock
+ok 29 - queue drain waits for in-flight work to persist before releasing a process lock
+  ---
+  duration_ms: 0.670036
+  type: 'test'
+  ...
+# Subtest: directory preview does not upload or create Wiki nodes
+ok 30 - directory preview does not upload or create Wiki nodes
+  ---
+  duration_ms: 23.882929
+  type: 'test'
+  ...
+# Subtest: directory import builds hierarchy and stores mappings
+ok 31 - directory import builds hierarchy and stores mappings
+  ---
+  duration_ms: 26.026602
+  type: 'test'
+  ...
+# Subtest: unchanged files are skipped without reupload
+ok 32 - unchanged files are skipped without reupload
+  ---
+  duration_ms: 31.010946
+  type: 'test'
+  ...
+# Subtest: local updates create a new version and retain the original document
+ok 33 - local updates create a new version and retain the original document
+  ---
+  duration_ms: 35.34121
+  type: 'test'
+  ...
+# Subtest: remote-only edit is reported, never overwritten
+ok 34 - remote-only edit is reported, never overwritten
+  ---
+  duration_ms: 34.50288
+  type: 'test'
+  ...
+# Subtest: both-side edits are a hard conflict by default
+ok 35 - both-side edits are a hard conflict by default
+  ---
+  duration_ms: 23.730569
+  type: 'test'
+  ...
+# Subtest: source changes between preview and apply abort before first upload
+ok 36 - source changes between preview and apply abort before first upload
+  ---
+  duration_ms: 8.819008
+  type: 'test'
+  ...
+# Subtest: upload failure leaves an inspectable checkpoint, not a retry loop
+ok 37 - upload failure leaves an inspectable checkpoint, not a retry loop
+  ---
+  duration_ms: 10.077594
+  type: 'test'
+  ...
+# Subtest: uncertain import blocks a new preview in the same destination
+ok 38 - uncertain import blocks a new preview in the same destination
+  ---
+  duration_ms: 23.805214
+  type: 'test'
+  ...
+# Subtest: a previously prepared competing plan cannot duplicate a completed import
+ok 39 - a previously prepared competing plan cannot duplicate a completed import
+  ---
+  duration_ms: 17.627211
+  type: 'test'
+  ...
+# Subtest: a previously prepared plan cannot bypass an uncertain import
+ok 40 - a previously prepared plan cannot bypass an uncertain import
+  ---
+  duration_ms: 12.169434
+  type: 'test'
+  ...
+# Subtest: human-confirmed absent upload closes checkpoint without a remote write
+ok 41 - human-confirmed absent upload closes checkpoint without a remote write
+  ---
+  duration_ms: 15.191605
+  type: 'test'
+  ...
+# Subtest: a response-lost upload can adopt the reviewed document at the recorded Wiki location
+ok 42 - a response-lost upload can adopt the reviewed document at the recorded Wiki location
+  ---
+  duration_ms: 28.537368
+  type: 'test'
+  ...
+# Subtest: manual reconciliation refuses incomplete or extra resolutions
+ok 43 - manual reconciliation refuses incomplete or extra resolutions
+  ---
+  duration_ms: 11.195372
+  type: 'test'
+  ...
+# Subtest: adoption refuses a document in a different Wiki location
+ok 44 - adoption refuses a document in a different Wiki location
+  ---
+  duration_ms: 14.667254
+  type: 'test'
+  ...
+# Subtest: an acknowledged created document cannot be declared not-created
+ok 45 - an acknowledged created document cannot be declared not-created
+  ---
+  duration_ms: 13.089898
+  type: 'test'
+  ...
+# Subtest: docs token seam is injected once and is idempotent
+ok 46 - docs token seam is injected once and is idempotent
+  ---
+  duration_ms: 2.37834
+  type: 'test'
+  ...
+# Subtest: block seam delegates before legacy token and scope logic
+ok 47 - block seam delegates before legacy token and scope logic
+  ---
+  duration_ms: 0.375039
+  type: 'test'
+  ...
+# Subtest: changed upstream checksum or anchor refuses an automatic patch
+ok 48 - changed upstream checksum or anchor refuses an automatic patch
+  ---
+  duration_ms: 0.874013
+  type: 'test'
+  ...
+# Subtest: both upstream tool registration styles share one catalog
+ok 49 - both upstream tool registration styles share one catalog
+  ---
+  duration_ms: 2.524272
+  type: 'test'
+  ...
+# Subtest: native writes are blocked before input validation or handler execution
+ok 50 - native writes are blocked before input validation or handler execution
+  ---
+  duration_ms: 0.704581
+  type: 'test'
+  ...
+# Subtest: native delete needs a separate destructive opt-in
+ok 51 - native delete needs a separate destructive opt-in
+  ---
+  duration_ms: 0.340852
+  type: 'test'
+  ...
+# Subtest: original destructive document recreation is correctly classified
+ok 52 - original destructive document recreation is correctly classified
+  ---
+  duration_ms: 0.258861
+  type: 'test'
+  ...
+# Subtest: enabling both native switches permits deliberate native writes
+ok 53 - enabling both native switches permits deliberate native writes
+  ---
+  duration_ms: 0.34141
+  type: 'test'
+  ...
+# Subtest: personal instance rejects model-driven credential reconfiguration
+ok 54 - personal instance rejects model-driven credential reconfiguration
+  ---
+  duration_ms: 2.593098
+  type: 'test'
+  ...
+# Subtest: failed operations do not poison the serial queue
+ok 55 - failed operations do not poison the serial queue
+  ---
+  duration_ms: 0.987442
+  type: 'test'
+  ...
+# Subtest: preview performs no remote write and saves before snapshot
+ok 56 - preview performs no remote write and saves before snapshot
+  ---
+  duration_ms: 22.594084
+  type: 'test'
+  ...
+# Subtest: apply verifies remote text and is idempotent when replayed
+ok 57 - apply verifies remote text and is idempotent when replayed
+  ---
+  duration_ms: 22.244498
+  type: 'test'
+  ...
+# Subtest: concurrent applies of the same plan issue one write
+ok 58 - concurrent applies of the same plan issue one write
+  ---
+  duration_ms: 22.554093
+  type: 'test'
+  ...
+# Subtest: changed document revision refuses a write
+ok 59 - changed document revision refuses a write
+  ---
+  duration_ms: 7.469885
+  type: 'test'
+  ...
+# Subtest: changed block with unchanged revision also refuses a write
+ok 60 - changed block with unchanged revision also refuses a write
+  ---
+  duration_ms: 7.931579
+  type: 'test'
+  ...
+# Subtest: expired plan refuses a write
+ok 61 - expired plan refuses a write
+  ---
+  duration_ms: 10.717717
+  type: 'test'
+  ...
+# Subtest: network failure marks outcome for inspection and never retries
+ok 62 - network failure marks outcome for inspection and never retries
+  ---
+  duration_ms: 9.301037
+  type: 'test'
+  ...
+# Subtest: lost response after successful remote write does not cause double execution
+ok 63 - lost response after successful remote write does not cause double execution
+  ---
+  duration_ms: 14.875167
+  type: 'test'
+  ...
+# Subtest: section patch rejects targets in another chapter
+ok 64 - section patch rejects targets in another chapter
+  ---
+  duration_ms: 2.925368
+  type: 'test'
+  ...
+# Subtest: section patch accepts descendants inside a table in the selected chapter
+ok 65 - section patch accepts descendants inside a table in the selected chapter
+  ---
+  duration_ms: 5.025907
+  type: 'test'
+  ...
+# Subtest: append is placed before the next peer heading
+ok 66 - append is placed before the next peer heading
+  ---
+  duration_ms: 11.991165
+  type: 'test'
+  ...
+# Subtest: text rollback returns exact prior text and style
+ok 67 - text rollback returns exact prior text and style
+  ---
+  duration_ms: 22.437553
+  type: 'test'
+  ...
+# Subtest: rollback refuses later remote changes
+ok 68 - rollback refuses later remote changes
+  ---
+  duration_ms: 9.099493
+  type: 'test'
+  ...
+# Subtest: patch does not advance the import baseline
+ok 69 - patch does not advance the import baseline
+  ---
+  duration_ms: 15.843923
+  type: 'test'
+  ...
+# Subtest: cache search states its limited scope
+ok 70 - cache search states its limited scope
+  ---
+  duration_ms: 7.104009
+  type: 'test'
+  ...
+# Subtest: export creates structural JSON without overwriting source Markdown
+ok 71 - export creates structural JSON without overwriting source Markdown
+  ---
+  duration_ms: 4.744507
+  type: 'test'
+  ...
+# Subtest: OAuth callback passes code/state to the shared service and returns no credentials
+ok 72 - OAuth callback passes code/state to the shared service and returns no credentials
+  ---
+  duration_ms: 33.471419
+  type: 'test'
+  ...
+# Subtest: OAuth rejects unexpected Host headers before handling credentials
+ok 73 - OAuth rejects unexpected Host headers before handling credentials
+  ---
+  duration_ms: 5.646326
+  type: 'test'
+  ...
+# Subtest: OAuth missing state fails without leaking code
+ok 74 - OAuth missing state fails without leaking code
+  ---
+  duration_ms: 4.765125
+  type: 'test'
+  ...
+# Subtest: OAuth never echoes an upstream error payload
+ok 75 - OAuth never echoes an upstream error payload
+  ---
+  duration_ms: 4.651231
+  type: 'test'
+  ...
+# Subtest: atomic store roundtrips and does not allow path traversal
+ok 76 - atomic store roundtrips and does not allow path traversal
+  ---
+  duration_ms: 13.174561
+  type: 'test'
+  ...
+# Subtest: corrupt JSON causes an error rather than empty-state replacement
+ok 77 - corrupt JSON causes an error rather than empty-state replacement
+  ---
+  duration_ms: 6.084193
+  type: 'test'
+  ...
+# Subtest: process lock is exclusive and release is ownership-aware
+ok 78 - process lock is exclusive and release is ownership-aware
+  ---
+  duration_ms: 9.330579
+  type: 'test'
+  ...
+# Subtest: snapshots get unique keys and persist independently
+ok 79 - snapshots get unique keys and persist independently
+  ---
+  duration_ms: 8.727701
+  type: 'test'
+  ...
+# Subtest: scanner includes Markdown recursively and ignores hidden folders
+ok 80 - scanner includes Markdown recursively and ignores hidden folders
+  ---
+  duration_ms: 7.819424
+  type: 'test'
+  ...
+# Subtest: path traversal outside knowledge root is blocked
+ok 81 - path traversal outside knowledge root is blocked
+  ---
+  duration_ms: 3.017908
+  type: 'test'
+  ...
+# Subtest: symlink escape is blocked
+ok 82 - symlink escape is blocked
+  ---
+  duration_ms: 3.068503
+  type: 'test'
+  ...
+# Subtest: scanner refuses oversized Markdown
+ok 83 - scanner refuses oversized Markdown
+  ---
+  duration_ms: 4.51392
+  type: 'test'
+  ...
+# Subtest: media preflight rejects escaped attachments and file URLs
+ok 84 - media preflight rejects escaped attachments and file URLs
+  ---
+  duration_ms: 5.147539
+  type: 'test'
+  ...
+# Subtest: media preflight accepts files inside the knowledge root
+ok 85 - media preflight accepts files inside the knowledge root
+  ---
+  duration_ms: 11.955651
+  type: 'test'
+  ...
+# Subtest: title extraction handles YAML front matter and BOM
+ok 86 - title extraction handles YAML front matter and BOM
+  ---
+  duration_ms: 0.367598
+  type: 'test'
+  ...
+1..86
+# tests 86
+# suites 0
+# pass 86
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 533.708074

@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.local/
+node_modules/
+vendor/*/
+!.gitkeep
+client-config.generated.json
+*.log
+coverage/
+
+vendor/build-report.json
+vendor/validation-report.json

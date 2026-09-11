@@ -1,0 +1,130 @@
+[
+  {
+    "file": "overlays/blocks-fusion-bridge.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/build.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/common.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/deny-publish.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/doctor.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/patches.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/setup.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/test.mjs",
+    "passed": true
+  },
+  {
+    "file": "scripts/write-client-config.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/config.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/blocks.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/errors.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/feishu-api.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/knowledge.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/paths.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/primitives.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/core/storage.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/integration/catalog.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/integration/oauth-server.mjs",
+    "passed": true
+  },
+  {
+    "file": "src/main.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/api.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/blocks.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/config.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/helpers.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/import.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/integration/client.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/integration/live.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/integration/smoke.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/integration-contracts.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/knowledge.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/oauth.test.mjs",
+    "passed": true
+  },
+  {
+    "file": "tests/storage-paths.test.mjs",
+    "passed": true
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-11",
+  "upstreams": {
+    "docs": {
+      "repository": "https://github.com/Hbin-Zhuang/mcp-feishu-doc.git",
+      "commit": "7b818807557e47dff6ab0869f9d961de4ca40088",
+      "version": "2.6.8",
+      "license": "Apache-2.0",
+      "patchTargets": {
+        "src/services/feishu/core/FeishuService.ts": "359bf6a1f2fc92c4957c3d63711fde154f73cf63"
+      }
+    },
+    "blocks": {
+      "repository": "https://github.com/cso1z/Feishu-MCP.git",
+      "commit": "a67232c11d3a8baecda23672161f6af50102f6e4",
+      "version": "0.3.3",
+      "license": "MIT",
+      "patchTargets": {
+        "src/services/feishu/FeishuBaseApiService.ts": "dbbf91cee1e12b25c38bd782733544df9188ed8b"
+      }
+    }
+  }
+}
