@@ -31,13 +31,38 @@ export function setFusionAccessTokenProvider(provider: () => Promise<string>): v
 }
 
 `;
+const blocksAuthAddition = `
+// FUSION_SOURCE_SEAM_V1: shared OAuth failures must not use the legacy token cache or secret-bearing state.
+let fusionSharedOAuthMode = false;
+export function setFusionSharedOAuthMode(enabled: boolean): void {
+  fusionSharedOAuthMode = enabled;
+}
+const fusionAuthFailure = 'Shared Feishu authorization failed. Use kb_auth to authorize through the local Docs OAuth callback.';
+
+`;
 function replaceExactly(source, marker, replacement) {
   if (source.split(marker).length !== 2) throw new Error(`Source contract changed: expected one occurrence of ${marker}`);
   return source.replace(marker,replacement);
 }
-export function patchSource(name, source, expectedHash) {
+export function patchSource(name, source, expectedHash, relativePath) {
   if (source.includes('FUSION_SOURCE_SEAM_V1')) return source;
   if (expectedHash && gitBlobHash(source)!==expectedHash) throw new Error(`Upstream source checksum mismatch (${name}). Refusing to guess a patch.`);
+  if(name==='docs' && relativePath==='src/services/feishu/providers/markdown-processor.provider.ts') {
+    let result=replaceExactly(source,"import { injectable } from 'tsyringe';",
+      "// FUSION_SOURCE_SEAM_V1: cache the complete Markdown input, not its prefix and length.\nimport { createHash } from 'node:crypto';\nimport { injectable } from 'tsyringe';");
+    result=replaceExactly(result,'// 使用内容长度和前100字符作为快速哈希','// Use a full-content digest so equal-length edits and sibling files cannot share stale output.');
+    return replaceExactly(result,'return `${content.length}:${content.substring(0, 100)}:${baseDirectory}:${configStr}`;',
+      "return `${createHash('sha256').update(content).digest('hex')}:${baseDirectory}:${configStr}`;");
+  }
+  if(name==='blocks' && relativePath==='src/services/baseService.ts') {
+    const marker='export abstract class BaseApiService {';
+    let result=replaceExactly(source,marker,blocksAuthAddition+marker);
+    for(const branch of [
+      'if (error instanceof AuthRequiredError) {',
+      'if (error instanceof AxiosError && error.response && tokenError.has(Number(error.response.data?.code))) {'
+    ])result=replaceExactly(result,branch,branch+'\n        if (fusionSharedOAuthMode) throw new Error(fusionAuthFailure);');
+    return result;
+  }
   if(name==='docs') {
     const marker='export class FeishuService implements IFeishuService {';
     return replaceExactly(source,marker,marker+docsAddition);

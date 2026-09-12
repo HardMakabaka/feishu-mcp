@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "verifiedAt": "2026-09-11T15:55:32.836Z",
+  "mcpTools": 16,
+  "oauthPersisted": true,
+  "liveReadTool": "kb_list_wikis",
+  "wikiSpaceCount": 0,
+  "remoteDocumentWrites": false,
+  "browserPreconnectionShutdown": true,
+  "shutdownMs": 256,
+  "processLockReleased": true,
+  "note": "Real user OAuth and Wiki-space listing verified. No document/media read-write test or token-refresh test was performed."
+}

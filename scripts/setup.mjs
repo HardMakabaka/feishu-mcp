@@ -29,7 +29,7 @@ async function setup(){
     }
     for(const [relative,blob]of Object.entries(upstream.patchTargets)) {
       const file=join(dir,relative);const original=await readFile(file,'utf8');
-      await writeFile(file,patchSource(name,original,blob),'utf8');
+      await writeFile(file,patchSource(name,original,blob,relative),'utf8');
     }
     const pkg=JSON.parse(await readFile(join(dir,'package.json'),'utf8'));
     if(pkg.version!==upstream.version)throw new Error(`Unexpected upstream version in ${name}`);
@@ -42,6 +42,7 @@ async function setup(){
   if(process.platform!=='win32')await chmod(join(root,'.env'),0o600);
   await run(process.execPath,['scripts/build.mjs']);
   await run(process.execPath,['scripts/test.mjs']);
+  await run(process.execPath,['--test','tests/integration/upstream-regressions.test.mjs']);
   await run(process.execPath,['tests/integration/smoke.mjs']);
   await writeFile(join(root,'vendor/validation-report.json'),JSON.stringify({status:'passed',verifiedAt:new Date().toISOString(),node:process.version,build:true,offlineTests:true,mcpSmoke:true,liveFeishu:false},null,2));
   console.error('\nSource integration installed. Edit .env, then run: npm run auth');

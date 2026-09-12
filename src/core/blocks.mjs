@@ -1,4 +1,5 @@
 import { invariant } from './errors.mjs';
+import { isDeepStrictEqual } from 'node:util';
 import { clone, hash } from './primitives.mjs';
 
 export function textPayload(block) {
@@ -10,6 +11,18 @@ export function textPayload(block) {
 export function blockText(block) {
   const payload = textPayload(block);
   return payload?.value.elements.map(e => e.text_run?.content ?? e.equation?.content ?? (e.mention_user ? '[mention]' : e.mention_doc ? '[document]' : '')).join('') ?? '';
+}
+export function textElementsEqual(actual, expected) {
+  if (!Array.isArray(actual) || !Array.isArray(expected)) return false;
+  // Feishu may spell out false inline-style defaults that the request omitted.
+  // Compare all other fields (including links, colors and element order) exactly.
+  const normalize = elements => elements.map(element => !element.text_run ? element : {
+    ...element, text_run: { ...element.text_run, text_element_style: {
+      bold:false, italic:false, strikethrough:false, underline:false, inline_code:false,
+      ...element.text_run.text_element_style
+    } }
+  });
+  return isDeepStrictEqual(normalize(actual), normalize(expected));
 }
 export function headingLevel(block) {
   for (let level = 1; level <= 9; level++) if (block[`heading${level}`]) return level;

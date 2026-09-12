@@ -1,7 +1,9 @@
 import { createServer } from 'node:http';
 import { invariant } from '../core/errors.mjs';
 export async function startOAuthServer({port,onCallback,onSuccess=()=>{}}) {
+  const preconnections=new Set();
   const server=createServer(async(req,res)=>{
+    preconnections.delete(req.socket);
     res.setHeader('Cache-Control','no-store');
     res.setHeader('Content-Type','text/plain; charset=utf-8');
     res.setHeader('X-Content-Type-Options','nosniff');
@@ -24,6 +26,15 @@ export async function startOAuthServer({port,onCallback,onSuccess=()=>{}}) {
       res.end(`授权未完成（${e.code||'OAUTH_FAILED'}）。请从客户端重新调用 kb_auth，并检查应用回调与权限配置。`);
     }
   });
+  server.on('connection',socket=>{
+    preconnections.add(socket);
+    socket.once('close',()=>preconnections.delete(socket));
+  });
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
-  return {close:()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()))};
+  return {close:()=>new Promise((resolve,reject)=>{
+    server.close(e=>e?reject(e):resolve());
+    // Browser TCP preconnections have no HTTP request for close() to drain.
+    // Preserve active callbacks; only discard sockets that never sent a request.
+    for(const socket of preconnections)socket.destroy();
+  })};
 }

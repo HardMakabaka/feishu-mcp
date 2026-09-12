@@ -23,6 +23,8 @@
 
 允许使用 `FUSION_EXTRA_OAUTH_SCOPES` 扩展同一个用户 OAuth 授权，不暴露模型修改 App Secret / 切换应用的入口。
 
+另一个补丁目标为 `src/services/feishu/providers/markdown-processor.provider.ts`，原始 Git Blob SHA 为 `d7cbae6eca91891ee543b1c1d56db14dcba99591`。将 Markdown 转换缓存键中的“长度 + 前 100 字符”替换为全文 SHA-256，继续保留工作目录和处理配置，避免等长修改或同目录文件复用旧正文。未关闭正常的相同输入缓存。
+
 ### blocks
 
 目标：`src/services/feishu/FeishuBaseApiService.ts`
@@ -32,6 +34,8 @@
 增加 `setFusionAccessTokenProvider()`，在基类 getAccessToken 最前优先调用共享 Provider。未注入时仍保留上游原逻辑，因此补丁不会把该服务永久绑定到外部 Token。
 
 `overlays/blocks-fusion-bridge.mjs` 使用实际编译后的 ModuleRegistry 和 FeishuApiService，将模块原生工具收集到统一入口；不启动原有 HTTP 或 stdio Server。
+
+另一个补丁目标为 `src/services/baseService.ts`，原始 Git Blob SHA 为 `8f63caf13dd3496208669d06ce469711d9d947be`。桥接显式开启 `setFusionSharedOAuthMode(true)`：在上游 Token 失效及缺少授权分支进入旧缓存/授权链接生成逻辑前，返回通过 `kb_auth` 重新授权的提示；不生成包含 App Secret 的旧 OAuth state，也不自动重放失败写入。该模式默认关闭，保留独立上游原有行为；融合模式只使用 Docs 的授权存储。
 
 ## 为什么不整仓合并为同一依赖树
 
@@ -49,5 +53,6 @@
 - `vendor/build-report.json` 在安装、构建前先标记 installing/building；只有两个源码桥接都完成才标记 built。
 - 运行时要求 built 标记。它仅代表构建脚本记录，不代表账号测试通过，更不是防篡改签名。
 - 只有本地执行 `test:integration`，才能验证当前解析的两套 SDK / Zod 确实协同工作。
+- `test:integration` 先执行真实上游代码的缓存及授权失败回归（全部使用假凭据/模拟响应），再执行 stdio MCP 冒烟；安装流程也执行这两项。
 
 本次不宣称已经运行上游全套测试，也未把上游 README 声称的能力等同于本机真实账号验证结果。

@@ -3,7 +3,7 @@ import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, dirname, basename, resolve } from 'node:path';
 import { invariant, errorResult } from './errors.mjs';
 import { clone, hash, SerialQueue } from './primitives.mjs';
-import { outline, sectionRange, prepareTextEdits, blockText, asPlainMarkdown } from './blocks.mjs';
+import { outline, sectionRange, prepareTextEdits, blockText, textPayload, textElementsEqual, asPlainMarkdown } from './blocks.mjs';
 import { scanMarkdown, withinRoot, checkLocalMedia } from './paths.mjs';
 
 export class KnowledgeService {
@@ -73,12 +73,14 @@ export class KnowledgeService {
   async planRollback(planId) {
     const original = await this.store.get('plans', planId);
     invariant(original?.type==='text_patch' && original.status==='applied', 'NOT_REVERSIBLE', 'Only verified text patches can be rolled back automatically');
+    invariant(Number.isSafeInteger(original.apiResult?.document_revision_id) && original.apiResult.document_revision_id===original.appliedRevisionId,
+      'ROLLBACK_CONFLICT', 'The applied snapshot does not match the acknowledged write revision; inspect the document manually');
     const snapshot = await this.api.snapshot(original.documentId);
     invariant(snapshot.revisionId===original.appliedRevisionId, 'ROLLBACK_CONFLICT', 'Document changed after the patch; automatic rollback is refused');
     const byId = new Map(snapshot.blocks.map(b=>[b.block_id,b]));
     const changes = original.changes.map(e=> {
       const current=byId.get(e.blockId); invariant(current, 'BLOCK_MISSING', 'A patched block no longer exists');
-      invariant(blockText(current)===e.afterText, 'ROLLBACK_CONFLICT', 'A patched block no longer matches the applied text');
+      invariant(textElementsEqual(textPayload(current)?.value.elements,e.afterElements), 'ROLLBACK_CONFLICT', 'A patched block no longer matches the applied text and inline styles');
       return { blockId:e.blockId, beforeHash:hash(current), beforeText:e.afterText, afterText:e.beforeText,
         beforeElements:clone(e.afterElements), afterElements:clone(e.beforeElements), styleLoss:false };
     });
@@ -109,10 +111,16 @@ export class KnowledgeService {
       plan.apiResult=result;
       // Save the acknowledgement before the verification read.
       plan.status='acknowledged'; await this.store.put('plans',plan.id,plan);
+      invariant(Number.isSafeInteger(result.document_revision_id) && result.document_revision_id>=plan.revisionId,
+        'WRITE_REVISION_UNAVAILABLE', 'The write acknowledgement did not identify a valid document revision; do not repeat the write');
       const after=await this.api.snapshot(plan.documentId);
+      invariant(after.revisionId===result.document_revision_id, 'POST_WRITE_REVISION_CONFLICT',
+        'Document changed after the acknowledged write. Inspect it before making or rolling back further edits.',
+        {expected:result.document_revision_id,actual:after.revisionId});
       if(plan.type==='text_patch') {
         const byId=new Map(after.blocks.map(b=>[b.block_id,b]));
-        invariant(plan.changes.every(e=>blockText(byId.get(e.blockId)||{})===e.afterText), 'POST_WRITE_MISMATCH', 'Feishu acknowledged the request but the verification text differs');
+        invariant(plan.changes.every(e=>textElementsEqual(textPayload(byId.get(e.blockId)||{})?.value.elements,e.afterElements)),
+          'POST_WRITE_MISMATCH', 'Feishu acknowledged the request but the verification text or inline styles differ');
       } else {
         const children=result.children;
         invariant(Array.isArray(children) && children.length===plan.paragraphs.length, 'POST_WRITE_MISMATCH', 'Insertion response did not identify every created block');
@@ -223,10 +231,12 @@ export class KnowledgeService {
         jobItem.documentId=result.documentId;jobItem.url=result.url;jobItem.status='created';await save();
         const snapshot=await this.api.snapshot(result.documentId);
         const nodes=await this.api.listWikiNodes(plan.spaceId,parent);
-        const node=nodes.find(n=>n.obj_token===result.documentId);
+        const node=nodes.find(n=>n.obj_token===result.documentId && n.obj_type==='docx');
+        invariant(node?.node_token,'WRONG_WIKI_LOCATION','The created document was not found under the requested Wiki parent. Inspect its location before reconciling this import.',
+          {documentId:result.documentId,spaceId:plan.spaceId,parentNodeToken:parent});
         const history=item.previous?[...(item.previous.history||[]),{documentId:item.previous.documentId,url:item.previous.url,contentHash:item.previous.contentHash}]:[];
         mappings.entries[item.key]={path:item.path,root:plan.root,scope:plan.scope,title:item.title,documentId:result.documentId,
-          url:result.url,wikiSpaceId:plan.spaceId,wikiNodeToken:node?.node_token,parentNodeToken:parent,
+          url:result.url,wikiSpaceId:plan.spaceId,wikiNodeToken:node.node_token,parentNodeToken:parent,
           contentHash:item.contentHash,baseRevisionId:snapshot.revisionId,lastObservedRevisionId:snapshot.revisionId,
           remoteEdited:false,history,importedAt:new Date(this.clock()).toISOString()};
         await this.store.put('state','mappings',mappings);

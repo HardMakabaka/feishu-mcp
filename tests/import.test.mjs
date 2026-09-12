@@ -80,3 +80,18 @@ test('an acknowledged created document cannot be declared not-created',async t=>
  const p=await c.knowledge.planImport({spaceId:'space1'});await c.knowledge.apply(p.id);
  await assert.rejects(()=>c.knowledge.reconcileImport(p.id,[{path:'a.md',outcome:'not_created'}]),e=>e.code==='KNOWN_CREATED_DOCUMENT');
 });
+
+test('a created document missing from the target Wiki remains uncertain, not synced',async t=>{
+ const c=await context(t);await c.write('a.md','# A');const upload=c.importer.uploadMarkdown;
+ c.importer.uploadMarkdown=async(...args)=>{const result=await upload(...args);c.api.nodes.clear();return result;};
+ const p=await c.knowledge.planImport({spaceId:'space1'});const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.error.error,'WRONG_WIKI_LOCATION');
+ assert.equal(result.job.items[0].status,'created');assert.equal(result.job.items[0].documentId,'import-1');
+ assert.equal(Object.keys((await c.knowledge.mappings()).entries).length,0);
+ await assert.rejects(()=>c.knowledge.planImport({spaceId:'space1'}),e=>e.code==='UNRESOLVED_IMPORT');
+ await assert.rejects(()=>c.knowledge.apply(p.id),e=>e.code==='PLAN_NOT_RETRYABLE');
+ // After the user has moved/reviewed the document, adoption fixes only local state.
+ c.api.nodes.set('space1:',[{node_token:'wiki-import-1',obj_token:'import-1',obj_type:'docx'}]);
+ assert.equal((await c.knowledge.reconcileImport(p.id,[{path:'a.md',outcome:'adopt',document:'import-1'}])).status,'closed_after_review');
+ assert.equal(c.imports.length,1);
+});

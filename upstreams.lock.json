@@ -8,7 +8,8 @@
       "version": "2.6.8",
       "license": "Apache-2.0",
       "patchTargets": {
-        "src/services/feishu/core/FeishuService.ts": "359bf6a1f2fc92c4957c3d63711fde154f73cf63"
+        "src/services/feishu/core/FeishuService.ts": "359bf6a1f2fc92c4957c3d63711fde154f73cf63",
+        "src/services/feishu/providers/markdown-processor.provider.ts": "d7cbae6eca91891ee543b1c1d56db14dcba99591"
       }
     },
     "blocks": {
@@ -17,7 +18,8 @@
       "version": "0.3.3",
       "license": "MIT",
       "patchTargets": {
-        "src/services/feishu/FeishuBaseApiService.ts": "dbbf91cee1e12b25c38bd782733544df9188ed8b"
+        "src/services/feishu/FeishuBaseApiService.ts": "dbbf91cee1e12b25c38bd782733544df9188ed8b",
+        "src/services/baseService.ts": "8f63caf13dd3496208669d06ce469711d9d947be"
       }
     }
   }

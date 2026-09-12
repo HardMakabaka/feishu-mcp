@@ -32,7 +32,11 @@ async function main(){
   let docs,oauth,server,requestQueue,closed=false;
   async function close(){
     if(closed)return;closed=true;
-    try{await oauth?.close();await server?.close();await requestQueue?.drain();await docs?.close();}finally{await release();}
+    // Upstream log workers are unref'ed: keep Node alive until cleanup and
+    // process-lock release finish, even after stdio and HTTP have closed.
+    const shutdownHold=setInterval(()=>{},1000);
+    try{await oauth?.close();await server?.close();await requestQueue?.drain();await docs?.close();}
+    finally{try{await release();}finally{clearInterval(shutdownHold);}}
   }
   const shutdown=()=>close().then(()=>process.exit(0)).catch(()=>process.exit(1));
   process.once('SIGINT',shutdown);process.once('SIGTERM',shutdown);

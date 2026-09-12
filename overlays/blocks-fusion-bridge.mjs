@@ -2,10 +2,12 @@
 import { ModuleRegistry } from './dist/modules/ModuleRegistry.js';
 import { FeishuApiService } from './dist/services/feishuApiService.js';
 import { setFusionAccessTokenProvider } from './dist/services/feishu/FeishuBaseApiService.js';
+import { setFusionSharedOAuthMode } from './dist/services/baseService.js';
 import { Config } from './dist/utils/config.js';
 import { z } from 'zod';
 export { z };
 export function initializeBlocks(collector, tokenProvider, modules = ['document']) {
+  setFusionSharedOAuthMode(true);
   setFusionAccessTokenProvider(tokenProvider);
   const config = Config.getInstance();
   config.feishu.authType = 'user';

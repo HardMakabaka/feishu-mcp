@@ -54,6 +54,52 @@ test('rollback refuses later remote changes',async t=>{
  const c=await context(t);const p=await c.knowledge.planPatch('doc1',[edit]);await c.knowledge.apply(p.id);c.api.documents.get('doc1').revisionId++;
  await assert.rejects(()=>c.knowledge.planRollback(p.id),e=>e.code==='ROLLBACK_CONFLICT');
 });
+test('concurrent style changes between acknowledgement and verification block rollback',async t=>{
+ const c=await context(t);const patch=c.api.patchText.bind(c.api);
+ c.api.patchText=async(...args)=>{const result=await patch(...args);const doc=c.api.documents.get('doc1');
+  doc.blocks.find(b=>b.block_id==='p1').text.elements[0].text_run.text_element_style={italic:true};doc.revisionId++;return result;};
+ const p=await c.knowledge.planPatch('doc1',[edit]);const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.error.error,'POST_WRITE_REVISION_CONFLICT');
+ assert.equal(result.apiResult.document_revision_id,8);assert.equal(c.api.documents.get('doc1').revisionId,9);
+ await assert.rejects(()=>c.knowledge.planRollback(p.id),e=>e.code==='NOT_REVERSIBLE');
+ await assert.rejects(()=>c.knowledge.apply(p.id),e=>e.code==='PLAN_NOT_RETRYABLE');assert.equal(c.api.calls.length,1);
+});
+test('a write acknowledgement must identify its revision before being marked applied',async t=>{
+ const c=await context(t);const patch=c.api.patchText.bind(c.api);
+ c.api.patchText=async(...args)=>{await patch(...args);return{};};
+ const p=await c.knowledge.planPatch('doc1',[edit]);const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.error.error,'WRITE_REVISION_UNAVAILABLE');assert.equal(c.api.calls.length,1);
+});
+test('text verification checks inline styles as well as visible text',async t=>{
+ const c=await context(t);const patch=c.api.patchText.bind(c.api);
+ c.api.patchText=async(...args)=>{const result=await patch(...args);
+  c.api.documents.get('doc1').blocks.find(b=>b.block_id==='p1').text.elements[0].text_run.text_element_style={bold:true};return result;};
+ const p=await c.knowledge.planPatch('doc1',[edit]);const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.error.error,'POST_WRITE_MISMATCH');
+});
+test('explicit false inline defaults do not create a false verification conflict',async t=>{
+ const c=await context(t);const patch=c.api.patchText.bind(c.api);
+ c.api.patchText=async(...args)=>{const result=await patch(...args);
+  c.api.documents.get('doc1').blocks.find(b=>b.block_id==='p1').text.elements[0].text_run.text_element_style={bold:false,italic:false,strikethrough:false,underline:false,inline_code:false};return result;};
+ const p=await c.knowledge.planPatch('doc1',[edit]);assert.equal((await c.knowledge.apply(p.id)).status,'applied');
+ const rollback=await c.knowledge.planRollback(p.id);assert.equal((await c.knowledge.apply(rollback.id)).status,'applied');
+});
+test('rollback rejects style changes even when the reported revision has not changed',async t=>{
+ const c=await context(t);const p=await c.knowledge.planPatch('doc1',[edit]);await c.knowledge.apply(p.id);
+ c.api.documents.get('doc1').blocks.find(b=>b.block_id==='p1').text.elements[0].text_run.text_element_style={italic:true};
+ await assert.rejects(()=>c.knowledge.planRollback(p.id),e=>e.code==='ROLLBACK_CONFLICT');assert.equal(c.api.calls.length,1);
+});
+test('legacy applied plans with mismatched acknowledgement revisions cannot be rolled back',async t=>{
+ const c=await context(t);const p=await c.knowledge.planPatch('doc1',[edit]);const applied=await c.knowledge.apply(p.id);
+ c.api.documents.get('doc1').revisionId++;applied.appliedRevisionId++;await c.store.put('plans',p.id,applied);
+ await assert.rejects(()=>c.knowledge.planRollback(p.id),e=>e.code==='ROLLBACK_CONFLICT');
+});
+test('append verification also rejects edits after the acknowledged revision',async t=>{
+ const c=await context(t);const append=c.api.insertParagraphs.bind(c.api);
+ c.api.insertParagraphs=async(...args)=>{const result=await append(...args);c.api.documents.get('doc1').revisionId++;return result;};
+ const p=await c.knowledge.planAppend('doc1',['Added']);const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.error.error,'POST_WRITE_REVISION_CONFLICT');assert.equal(c.api.calls.length,1);
+});
 test('patch does not advance the import baseline',async t=>{
  const c=await context(t);await c.store.put('state','mappings',{entries:{x:{documentId:'doc1',baseRevisionId:7}},directories:{}});
  const p=await c.knowledge.planPatch('doc1',[edit]);await c.knowledge.apply(p.id);const m=await c.knowledge.mappings();assert.equal(m.entries.x.baseRevisionId,7);assert.equal(m.entries.x.remoteEdited,true);

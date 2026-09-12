@@ -18,6 +18,25 @@ test('changed upstream checksum or anchor refuses an automatic patch',()=>{
  assert.throws(()=>patchSource('docs','changed','bad'),/checksum mismatch/);
  assert.throws(()=>patchSource('docs','changed'),/Source contract changed/);
 });
+test('Markdown cache seam is checksum-guarded and idempotent',()=>{
+ const path='src/services/feishu/providers/markdown-processor.provider.ts';
+ const source="import { injectable } from 'tsyringe';\n// 使用内容长度和前100字符作为快速哈希\nreturn `${content.length}:${content.substring(0, 100)}:${baseDirectory}:${configStr}`;";
+ const patched=patchSource('docs',source,gitBlobHash(source),path);
+ assert(patched.includes("createHash('sha256').update(content).digest('hex')"));assert(!patched.includes('content.substring(0, 100)'));
+ assert.equal(patchSource('docs',patched,gitBlobHash(source),path),patched);
+ assert.throws(()=>patchSource('docs',source+'changed',gitBlobHash(source),path),/checksum mismatch/);
+});
+test('shared OAuth failure seam guards both legacy authentication branches without deleting them',()=>{
+ const path='src/services/baseService.ts';
+ const source='export abstract class BaseApiService {\nif (error instanceof AuthRequiredError) { LEGACY_AUTH(); }\nif (error instanceof AxiosError && error.response && tokenError.has(Number(error.response.data?.code))) { LEGACY_CACHE(); }\n}';
+ const patched=patchSource('blocks',source,gitBlobHash(source),path);
+ assert(patched.includes('let fusionSharedOAuthMode = false;'));assert(patched.includes('setFusionSharedOAuthMode'));
+ assert.equal(patched.match(/if \(fusionSharedOAuthMode\) throw new Error\(fusionAuthFailure\)/g).length,2);
+ assert(patched.indexOf('throw new Error(fusionAuthFailure)')<patched.indexOf('LEGACY_AUTH()'));
+ assert(patched.lastIndexOf('throw new Error(fusionAuthFailure)')<patched.indexOf('LEGACY_CACHE()'));
+ assert.equal(patchSource('blocks',patched,gitBlobHash(source),path),patched);
+ assert.throws(()=>patchSource('blocks',source+'changed',gitBlobHash(source),path),/checksum mismatch/);
+});
 test('both upstream tool registration styles share one catalog',async()=>{
  const c=new NativeCatalog();c.collector('docs',z).registerTool('feishu_get_document',{inputSchema:z.object({documentId:{}}),description:'read'},async()=>({ok:true}));
  c.collector('blocks',z).tool('get_feishu_document_blocks','read',{documentId:{}},async()=>({ok:true}));
