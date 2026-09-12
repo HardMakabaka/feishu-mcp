@@ -8,7 +8,8 @@ const dir=await mkdtemp(join(tmpdir(),'feishu-fusion-smoke-'));
 const client=startClient({FUSION_DATA_DIR:dir,FUSION_SMOKE_MODE:'true',FEISHU_APP_ID:'cli_fusion_smoketest',FEISHU_APP_SECRET:'not-a-real-secret',FUSION_EXPOSE_NATIVE_TOOLS:'false',FUSION_ALLOW_NATIVE_WRITES:'false',FUSION_BLOCK_MODULES:'document'});
 let report;
 try{
-  await client.initialize();
+  const initialized=await client.initialize();
+  assert.equal(initialized.serverInfo.name,'feishu-knowledge');
   const tools=await client.request('tools/list',{});
   assert(tools.tools.some(t=>t.name==='kb_plan_patch'));
   assert(tools.tools.some(t=>t.name==='kb_plan_import'));

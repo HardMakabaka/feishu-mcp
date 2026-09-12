@@ -56,7 +56,7 @@ export class NativeCatalog {
     // mode deliberately does not allow a model to reconfigure credential storage.
     invariant(!['feishu_add_app','feishu_set_default_app','feishu_auth_callback','feishu_auth_url'].includes(entry.name),
       'NATIVE_ADMIN_DISABLED','Use .env and kb_auth for this single-account local integration');
-    if(args?.appId)invariant(args.appId===this.appId,'APP_ID_MISMATCH','This local instance is bound to the configured personal app');
+    if(args?.appId)invariant(args.appId===this.appId,'APP_ID_MISMATCH','This instance is bound to the configured app');
     invariant(isNativeReadOnly(entry.name)||this.allowWrites,'NATIVE_WRITES_DISABLED','Use the kb_* preview/apply tools, or explicitly enable FUSION_ALLOW_NATIVE_WRITES in .env');
     invariant(!isNativeDestructive(entry.name)||this.allowDestructive,'NATIVE_DESTRUCTIVE_DISABLED','This native action can delete or rebuild documents. FUSION_ALLOW_NATIVE_DESTRUCTIVE is required.');
     const parsed=await entry.schema.parseAsync(args);

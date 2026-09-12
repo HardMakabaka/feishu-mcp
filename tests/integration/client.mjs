@@ -21,7 +21,7 @@ export function startClient(env={}){
     });
   }
   return {request,call:(name,args={})=>request('tools/call',{name,arguments:args}),
-    initialize:async()=>{await request('initialize',{protocolVersion:'2024-11-05',capabilities:{},clientInfo:{name:'fusion-integration-test',version:'0.2.0'}});child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');},
+    initialize:async()=>{const result=await request('initialize',{protocolVersion:'2024-11-05',capabilities:{},clientInfo:{name:'fusion-integration-test',version:'0.2.0'}});child.stdin.write(JSON.stringify({jsonrpc:'2.0',method:'notifications/initialized'})+'\n');return result;},
     close:async()=>{child.stdin.end();await new Promise(resolve=>{const timer=setTimeout(()=>{child.kill();resolve();},5000);child.once('exit',()=>{clearTimeout(timer);resolve();});});},
     stderr:()=>stderr};
 }

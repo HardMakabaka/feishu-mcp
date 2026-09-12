@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { root } from './common.mjs';
-const config={mcpServers:{'feishu-knowledge-private':{command:process.execPath,args:[join(root,'src/main.mjs')]}}};
+const config={mcpServers:{'feishu-knowledge':{command:process.execPath,args:[join(root,'src/main.mjs')]}}};
 const file=join(root,'client-config.generated.json');
 await writeFile(file,JSON.stringify(config,null,2)+'\n');
 console.log(file);

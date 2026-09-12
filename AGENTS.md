@@ -1,6 +1,6 @@
 # Development constraints
 
-- This is a private local knowledge-base integration. Do not create public repositories, publish packages, expose HTTP MCP ports, or upload credentials.
+- This is a local knowledge-base integration. Do not create public repositories, publish packages, expose HTTP MCP ports, or upload credentials.
 - Run `npm test` for all core edits. Full builds require Node 24, Git, and vendor dependencies.
 - Do not represent unit tests as Feishu end-to-end verification. Update `docs/VALIDATION.md` with exact evidence.
 - Preserve both upstream repositories and notices; inspect `upstreams.lock.json` before modifying source seams.

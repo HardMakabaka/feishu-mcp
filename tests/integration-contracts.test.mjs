@@ -57,7 +57,7 @@ test('original destructive document recreation is correctly classified',()=>{
 test('enabling both native switches permits deliberate native writes',async()=>{
  const c=new NativeCatalog({allowWrites:true,allowDestructive:true});c.collector('blocks',z).tool('delete_feishu_document_blocks','delete',{},async()=>({done:true}));assert.deepEqual(await c.call('blocks__delete_feishu_document_blocks',{}),{done:true});
 });
-test('personal instance rejects model-driven credential reconfiguration',async()=>{
+test('single-account instance rejects model-driven credential reconfiguration',async()=>{
  const c=new NativeCatalog({allowWrites:true,allowDestructive:true});c.collector('docs',z).tool('feishu_add_app','config',{},async()=>({}));await assert.rejects(()=>c.call('docs__feishu_add_app',{}),e=>e.code==='NATIVE_ADMIN_DISABLED');
 });
 test('failed operations do not poison the serial queue',async()=>{

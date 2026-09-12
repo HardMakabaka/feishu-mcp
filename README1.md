@@ -1,24 +1,22 @@
-# Feishu Knowledge MCP · 本地个人融合版
+# Feishu Knowledge MCP
 
-一个 MCP 入口，整合飞书 Markdown/Wiki 工作流与 Block 精细编辑，并增加个人知识库的映射、预览、版本检查、快照和失败检查点。
+飞书知识库 MCP 服务，支持 Markdown 目录导入、Wiki 管理和 Block 级编辑。
 
-**交付状态：v0.2.0 源码融合工程。** 这不是之前的空 HTTP 适配器骨架；真实 API 调用、两套上游的源码补丁、共用 OAuth 的运行时桥接、知识库工作流与测试均已提供。**但此压缩包不是离线成品：不含两个上游完整仓库、npm 依赖或预编译文件。** `npm run setup` 在你的电脑上拉取固定源码、校验、注入补丁、安装依赖、编译并执行 MCP 冒烟测试。
+提供修改预览、版本检查、快照、增量发布和失败恢复，通过本地 stdio 接入 MCP 客户端。
 
-本次交付环境只运行了无需第三方依赖的离线测试，未完成上游安装、完整 TypeScript 编译、真实 SDK 握手或飞书账号联调。精确结果见 [验证记录](docs/VALIDATION.md)。不要把离线通过等同于可以无风险批量操作正式知识库。
+## 1. 集成方式
 
-## 1. 融合方式
-
-| 来源 | 固定版本 | 本工程如何使用 |
+| 来源 | 固定版本 | 用途 |
 |---|---|---|
 | `Hbin-Zhuang/mcp-feishu-doc` | 2.6.8 / `7b818807557e47dff6ab0869f9d961de4ca40088` | 复用原始 Markdown、Wiki、媒体、OAuth、搜索与文档生命周期服务，捕获其 15 个工具定义 |
 | `cso1z/Feishu-MCP` | 0.3.3 / `a67232c11d3a8baecda23672161f6af50102f6e4` | 复用原始 Block、表格、图片、画板等模块；通过源码补丁共享前者的用户 Token |
-| 本工程新增 | 0.2.0 | 单一 MCP 入口、知识库服务、版本保护、本地映射、快照、检查点、恢复检查、原生工具开关 |
+| 集成层 | 0.2.0 | 单一 MCP 入口、知识库服务、版本保护、本地映射、快照、检查点、恢复检查、原生工具开关 |
 
-不是两个 MCP 子进程之间转发消息，也不是重新写一套假的上游 API：**同一个 Node 进程加载两个实际上游服务，注册到同一个 MCP Server。** 两个上游分别安装自己的依赖，以保留 Zod 3 / Zod 4 的边界。没有用自动大合并抹平两个仓库。
+两个上游服务在同一个 Node 进程中运行，共享 OAuth，并注册到同一个 MCP Server。依赖分别安装，保留各自的 Zod 版本和构建方式。
 
-上游完整源码安装后位于 `vendor/docs`、`vendor/blocks`，仍可继续修改。安装脚本不会推送 Git、创建 GitHub 仓库或发布 npm 包。
+上游源码安装在 `vendor/docs` 和 `vendor/blocks`，保留原有仓库结构，支持后续修改。
 
-## 2. 本版能力与边界
+## 2. 功能
 
 | 能力 | 实现及范围 |
 |---|---|
@@ -30,33 +28,33 @@
 | 表格补充 | 可通过安全工具修改单元格内的文本 Block；创建/结构修改走原生表格工具 |
 | 追加 | 安全工具追加纯文本段落；富文本、图片、复杂结构走原生工具 |
 | 图片 / 附件 / 画板 | 保留上游原生能力；目录导入媒体默认关闭，可显式开启本地媒体上传 |
-| 查找 | 本地缓存搜索；原生工具提供上游搜索，不把缓存搜索说成全库检索 |
+| 查找 | 搜索本地缓存；通过原生工具搜索飞书文档 |
 | 导出与回滚 | 完整 Block JSON 快照 + 辅助 Markdown 导出；只对已验证、未被后续修改的文本编辑自动生成回滚计划 |
 | 失败恢复 | 不重放不确定计划；阻止同目的地新计划绕过；人工检查后接管已创建文档或确认未创建 |
 | 原生完整工具 | `kb_native_catalog` / `kb_native_call`；可选逐个暴露。账号重配置工具在单用户模式中禁用 |
 
-**“目录同步”在本版是单向发布和版本保留，不是双向自动合并，也不是整篇 Markdown 无损原位重写。** 需要保留现有链接的局部修改应使用 Block 计划。原生 `feishu_update_document` 会删除旧文档并重建，因此属于高风险开关控制的操作，不作为日常同步路径。
+目录导入采用单向发布：更新时创建新版本，保留旧文档，不自动合并双端内容。需要保留链接的局部修改使用 Block 计划。原生 `feishu_update_document` 会删除并重建文档，由独立的危险操作开关控制。
 
 ## 3. 安装
 
 ### 环境
 
-使用 **Node.js 24.x + npm + Git**。运行时明确检查 Node 24，因为 Block 上游的 package.json 要求 `^24.0.0`。根目录离线测试可在本次使用的 Node 22.16.0 上运行，但这不代表完整项目兼容 Node 22。
+需要 **Node.js 24.x、npm 和 Git**。
 
-首次安装需访问 GitHub 和 npm。无需全局安装 pnpm；脚本绕过上游的 prepare 钩子，显式执行所需构建。
+首次安装需要访问 GitHub 和 npm，以下载上游源码及依赖，无需全局安装 pnpm。
 
 ```sh
-cd feishu-knowledge-mcp-fusion
+cd feishu-mcp
 npm run setup
 ```
 
-脚本会依次：拉取固定提交 → 校验源文件 Git Blob SHA → 注入共享 OAuth 接口 → 分目录安装依赖 → 编译真实上游 → 运行离线测试 → 运行真实 SDK 的本地 MCP 握手测试。任何阶段出错会停止并返回非零退出码。**请保留完整报错；不要跳过失败的类型检查后直接操作正式文档。**
+安装流程：拉取固定提交 → 校验并应用源码补丁 → 分目录安装依赖 → 类型检查和构建 → 离线测试 → 上游回归与 MCP 握手测试。任一步骤失败都会停止安装；修复错误后重新执行 `npm run setup`。
 
-本次没有提供已解析的 npm lockfile：固定的是上游源码提交；首次成功安装会在两个 vendor 目录产生 `package-lock.json`。后续安装使用 `npm ci`。备份这些 lockfile 才能复现首次解析出的传递依赖。上游自带的 pnpm lockfile 会保留，但本安装流程不使用它。
+上游源码版本由 `upstreams.lock.json` 固定。首次安装在两个 vendor 目录生成 `package-lock.json`，后续安装使用 `npm ci`；复现依赖版本时需保留这两份锁文件。安装流程使用 npm，不使用上游的 pnpm 锁文件。
 
 ### 配置飞书应用
 
-在飞书开放平台创建自己使用的应用，并完成权限配置及应用发布/可用性设置。回调地址必须与 `.env` 完全一致，默认：
+在飞书开放平台创建应用，配置权限并发布。回调地址必须与 `.env` 一致，默认：
 
 ```text
 http://localhost:3010/oauth/feishu/callback
@@ -68,7 +66,7 @@ http://localhost:3010/oauth/feishu/callback
 contact:user.base:readonly docx:document drive:drive wiki:wiki offline_access
 ```
 
-这些名称来自被固定的上游常量，不替代飞书后台的实际权限审批。拥有 API 权限也不意味着能编辑所有文档；授权用户仍需拥有目标文档和 Wiki 的相应访问/编辑权限。
+在飞书后台开通上述 API 权限，并确保授权用户具有目标文档和 Wiki 的访问或编辑权限。
 
 安装后会复制 `.env.example` 为 `.env`。仅在本机编辑：
 
@@ -106,7 +104,7 @@ npm run config
 
 将生成的 `client-config.generated.json` 内容加入支持 `mcpServers` JSON 格式的本地客户端。文件含本机 Node 路径和本工程绝对路径，不含凭证。客户端通常直接启动 `node src/main.mjs`；不要用可能输出 npm 日志的 `npm start` 作为 stdio MCP 的协议入口。
 
-不同客户端配置文件格式可能不同；生成文件不宣称是所有客户端的原生格式。这里提供的是本地 **stdio**，不是云端可直连的远程 MCP 地址。把本机服务暴露到公网不属于本版部署方式。
+服务使用本地 **stdio** 传输。客户端若采用其他配置格式，按其要求填写相同的启动命令和参数；项目未提供 HTTP MCP 接口。
 
 ## 4. 推荐工作流
 
@@ -135,9 +133,9 @@ npm run config
 
 `path` 必须在 `KNOWLEDGE_ROOT` 内。`AI/RAG.md` 会在所选目的地下建立/复用 `AI` 节点。Wiki 中的“目录”实际上使用可挂子节点的 Docx 节点表示。
 
-### 让 AI 补充知识表格中的某几个单元格
+### 修改表格单元格
 
-先 `kb_read` 获取真实 Block ID，不根据行号猜 ID。找到单元格内的段落，再生成计划：
+调用 `kb_read` 获取单元格内段落的 Block ID，再生成修改计划：
 
 ```json
 {
@@ -152,11 +150,11 @@ npm run config
 }
 ```
 
-复杂混合样式默认不做有损改写；可明确指定 `allowStyleLoss:true`，但这只代表接受样式简化，不代表允许公式或提及内容被悄悄破坏。章节限制可添加 `section: {"headingBlockId":"标题ID"}`。
+混合样式文本默认拒绝改写，可设置 `allowStyleLoss:true` 接受样式简化；含公式或提及的文本仍拒绝修改。通过 `section: {"headingBlockId":"标题ID"}` 限定章节范围。
 
 ### 后续本地文件和飞书都发生了变化
 
-模型直接编辑飞书后，映射会标记 `remoteEdited`，不会把本地文件假装成已同步。
+通过 Block 计划修改飞书文档后，映射标记为 `remoteEdited`，保留原同步基线。
 
 - 只有远端变更：`skip_remote_changed`，保留远端，不回写本地。
 - 只有本地变更：`new_version`，创建新文档并记录旧文档历史，原链接保留但不自动指向新文档。
@@ -164,7 +162,7 @@ npm run config
 
 ### 使用上游全部原生能力
 
-先 `kb_native_catalog` 搜索具体能力，查看真实工具名及参数摘要，再 `kb_native_call` 调用。名称带 `docs__` 或 `blocks__` 前缀，避免冲突。原生参数仍由所属上游自己的 Zod schema 校验。
+用 `kb_native_catalog` 查询工具名和参数，再通过 `kb_native_call` 调用。工具名称带 `docs__` 或 `blocks__` 前缀，参数由所属上游的 Zod schema 校验。
 
 ```dotenv
 # 显示每个原生工具的完整 MCP schema；会显著增加工具数量
@@ -177,9 +175,9 @@ FUSION_ALLOW_NATIVE_WRITES=true
 FUSION_ALLOW_NATIVE_DESTRUCTIVE=false
 ```
 
-开关变化后重启 MCP。**原生写入不享受安全计划层的所有版本保护、备份和回滚承诺。** 原生文件工具也不受 `KNOWLEDGE_ROOT` 统一沙箱约束，只应处理可信本地输入。
+修改开关后重启 MCP。原生写入绕过计划层的版本检查、快照和回滚流程；原生文件工具不受 `KNOWLEDGE_ROOT` 路径限制，只处理可信输入。
 
-默认只加载 Block 上游的 document 模块。任务/日历等非知识库能力可通过 `FUSION_BLOCK_MODULES` 显式启用；对应 API 权限需另行开通，并通过 `FUSION_EXTRA_OAUTH_SCOPES` 添加准确 scope 后重新授权。不要仅打开模块就假设权限已具备。
+默认加载 Block 上游的 document 模块。任务、日历等模块通过 `FUSION_BLOCK_MODULES` 启用，同时需要开通对应 API 权限，在 `FUSION_EXTRA_OAUTH_SCOPES` 添加 scope 并重新授权。
 
 ## 5. 工程目录
 
@@ -188,7 +186,7 @@ src/
   main.mjs                    单入口 MCP、工具注册、生命周期
   config.mjs                  本机单应用配置
   core/
-    feishu-api.mjs             真实 Docx / Wiki HTTP 调用
+    feishu-api.mjs             Docx / Wiki HTTP 调用
     knowledge.mjs              入库、计划、冲突、恢复检查、映射
     blocks.mjs                 章节范围、文本变更、Markdown 辅助导出
     paths.mjs                  本地路径与媒体预检查
@@ -197,17 +195,17 @@ src/
     catalog.mjs                原生工具收集/校验/风险开关
     oauth-server.mjs           仅本机 OAuth 回调
 scripts/                      拉源码、补丁、构建、诊断、客户端配置
-  patches.mjs                 校验过的两个源码接缝
+  patches.mjs                 上游源码校验与补丁
   setup.mjs / build.mjs
   doctor.mjs
   write-client-config.mjs
-overlays/                     将被复制到真实上游的桥接代码
+overlays/                     上游桥接代码
 vendor/                       安装后才有 docs/ 和 blocks/ 源码与依赖
 tests/                        离线测试；integration/ 为本地握手和账号实测
 .local/                       运行后产生：OAuth、计划、映射、快照、日志
 ```
 
-本工程编排层用可直接执行的 `.mjs`；两个上游仍保留 TypeScript。这样可以独立测试安全逻辑，不把“依赖无法安装”当作不做任何验证的理由。
+编排层使用可直接执行的 `.mjs`，两个上游保留 TypeScript。根目录离线测试可独立运行。
 
 ## 6. 诊断与验证
 
@@ -215,18 +213,20 @@ tests/                        离线测试；integration/ 为本地握手和账�
 npm test                  # 根目录离线测试，不需要 npm 安装或飞书账号
 npm run doctor            # 检查 Node、构建文件、配置、目录和进程锁；不访问账号
 npm run build             # 依赖安装后，重新类型检查并构建两个源码桥接
-npm run test:integration  # 真实 SDK + stdio 握手/工具注册，不访问飞书
+npm run test:integration  # 上游回归、SDK 握手与工具注册，不访问飞书
 npm run test:live         # 需要专门指定文档；默认只读
 ```
 
-账号实测前在 `.env` 配置 `FEISHU_LIVE_DOCUMENT` 为你选择的测试文档 URL。默认不写入。只有再明确设置 `FEISHU_LIVE_ALLOW_WRITE=true` 和一个纯文本段落的 `FEISHU_LIVE_EDIT_BLOCK`，测试才会修改该段落并尝试反向恢复。发生错误时请检查计划和文档；不能承诺总能恢复。
+账号测试需在 `.env` 设置 `FEISHU_LIVE_DOCUMENT` 为测试文档 URL。默认只读；同时设置 `FEISHU_LIVE_ALLOW_WRITE=true` 和纯文本段落的 `FEISHU_LIVE_EDIT_BLOCK` 后，才会执行修改和反向恢复。失败时保留检查点，需人工核对文档。
+
+各阶段测试结果见 [验证记录](docs/VALIDATION.md)。
 
 导入 `needs_inspection`、文件锁、原生删除风险、备份边界见 [安全与限制](docs/SAFETY_AND_LIMITS.md)。
 
-## 7. 本地与隐私
+## 7. 运行与数据保护
 
-`package.json` 设置 `private:true`，同时提供拒绝发布的钩子；没有云部署步骤，没有自动上传 Git，也没有启用遥测初始化。**本地运行不等于数据不出本机：** 导入内容会上传飞书；模型读取到的文档还可能由你所用模型服务处理。
+项目使用本地 stdio 运行，未提供云部署步骤，也未启用遥测初始化。导入内容会上传飞书；模型读取到的文档还可能由你所用模型服务处理。
 
-`.env` 与 `.local` 必须由你自行保护和备份。本地 Token 存储不是操作系统钥匙串，也不宣称加密；POSIX 权限尽量设为目录 700、文件 600，Windows 仍依赖目录 ACL。不要让不可信程序或他人共享该数据目录。
+`.env` 与 `.local` 包含凭据和运行数据，需限制访问并备份。Token 使用未加密的文件存储；POSIX 推荐目录权限 700、文件权限 600，Windows 使用目录 ACL。
 
-第三方出处与保留要求见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。所有来源与代码接缝均可检查，不因个人使用而删除上游声明。
+第三方出处与保留要求见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。所有来源与代码接缝均可检查，上游声明须保留。

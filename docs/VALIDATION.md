@@ -1,36 +1,36 @@
-# 验证记录 · 2026-09-11
+# 验证记录
 
-## 已执行
+## 初始离线验证 · 2026-09-11
 
 | 检查 | 结果 | 实际含义 |
 |---|---|---|
 | 根目录离线测试 | **86 / 86 通过；0 失败；0 跳过** | 覆盖新增本地逻辑、模拟 API 合约、源码补丁接缝及本机 OAuth 回调 HTTP |
-| 自有 JavaScript 语法检查 | **32 / 32 通过** | `node --check`，不是 TypeScript 类型检查 |
-| 执行环境 | Node v22.16.0；npm 10.9.2 | 完整融合运行时仍要求 Node 24.x |
-| 上游核对 | 两个固定 commit、关键服务签名、工具注册方式和补丁目标 Blob SHA 已通过 GitHub 连接核对 | 不等于全部源码已经下载到交付包 |
+| JavaScript 语法检查 | **32 / 32 通过** | `node --check` 语法检查 |
+| 执行环境 | Node v22.16.0；npm 10.9.2 | 项目运行要求 Node 24.x |
+| 上游核对 | 已通过 GitHub 核对固定 commit、关键服务签名、工具注册方式和补丁目标 Blob SHA | 源码版本与接口检查 |
 
 原始结果：[offline-tests.tap](../validation/offline-tests.tap)、[syntax-checks.json](../validation/syntax-checks.json)、[report.json](../validation/report.json)。
 
 离线覆盖重点：章节同级边界、标题歧义、混合样式、公式/提及拒绝、表格单元格文本、revision 和 Block 哈希冲突、预览无写入、同计划重复执行、竞争导入计划、失败不确定性、人工恢复核对、路径和符号链接、媒体预检查、原子存储、进程锁、本地回调 Host/state、分页和 GET 重试、写请求不自动重试、原生工具风险开关、单应用配置、关闭遥测及队列排空。
 
-## 尚未执行
+## 该阶段未执行
 
 1. 两个上游完整仓库下载、npm 依赖安装、上游 TypeScript 类型检查和打包。
 2. 加载真实 SDK / Zod / DI 后的统一 MCP 握手与全部工具注册。
 3. 真实飞书用户 OAuth、自动刷新、权限、Wiki、文档和媒体读写。
 4. 两个上游自带的完整测试套件。
 
-本环境无法解析 GitHub/npm 下载地址，且没有用户飞书凭证；因此没有用上述离线测试代替真实集成测试，也没有生成伪造的完整构建成功记录。实际测试日志不会包含用户知识库或 Token。
+初始环境无法解析 GitHub/npm 下载地址，且未配置飞书凭据，因此该阶段仅执行离线测试。
 
-## 本机后续验证
+## 验证命令
 
 ```sh
 npm run setup
 ```
 
-安装脚本会下载固定源码、注入补丁、安装两份依赖、编译、执行根离线测试，再执行 `test:integration`。全部成功后才产生 `vendor/validation-report.json` 的 passed 记录。`vendor/build-report.json` 只记录构建，不代表握手或账号验证。
+安装脚本下载固定源码、应用补丁、安装依赖、编译并执行离线与集成测试。全部成功后将 `vendor/validation-report.json` 标记为 passed；`vendor/build-report.json` 单独记录构建结果。
 
-授权后选择可丢弃测试文档，再执行 `npm run test:live`；默认只读。写入需要额外显式设置 `FEISHU_LIVE_ALLOW_WRITE=true` 和 `FEISHU_LIVE_EDIT_BLOCK`。真实环境的结果应另行追加到本报告，不得把本次离线通过改写为已联调成功。
+授权后选择测试文档并执行 `npm run test:live`，默认只读。写入需同时设置 `FEISHU_LIVE_ALLOW_WRITE=true` 和 `FEISHU_LIVE_EDIT_BLOCK`。账号测试结果按执行时间单独记录。
 
 ## Windows 本机安装验证 · 2026-09-11
 
@@ -41,7 +41,7 @@ npm run setup
 - Docs 的 `tsc --noEmit` 与桥接打包、Blocks 的 `tsc` 与 `tsc-alias` 均通过。构建器提示未安装可选 `@swc/core`，后续运行时握手仍通过；未跳过 TypeScript 检查。
 - 根目录离线测试 **86 / 86 通过，0 失败，0 跳过**。
 - 真实 SDK + stdio 冒烟测试通过：**16 个 MCP 入口工具、15 个 Docs 原生工具、15 个 Blocks 原生工具**；原生危险写入被拒绝。测试使用临时数据目录和假凭证，没有飞书 HTTP 请求或真实 OAuth。
-- `npm run config` 已生成无凭证的 `client-config.generated.json`。通过 `codex mcp add` 注册全局 `feishu-knowledge-private`，启动入口为本机 Node 与 `src/main.mjs`；因缺少飞书应用凭证，暂设 `enabled = false`。
+- `npm run config` 已生成无凭证的 `client-config.generated.json`。通过 `codex mcp add` 注册全局飞书 MCP 服务，启动入口为本机 Node 与 `src/main.mjs`；因缺少飞书应用凭证，暂设 `enabled = false`。
 - `npm run doctor` 检查 **6 / 8 通过**，exit 1 的两项原因仅为 App ID、App Secret 仍是模板占位值；构建文件、知识库示例目录、Node、Git、单实例锁检查通过。未进行真实账号授权、文档/Wiki/媒体联调或两个上游的完整测试套件。
 
 安装日志：[install-setup.log](../validation/install-setup.log)；诊断日志：[install-doctor.log](../validation/install-doctor.log)。机器可读安装结果见 `vendor/validation-report.json`（`status: passed`、`liveFeishu: false`），构建结果见 `vendor/build-report.json`。此处的安装和本地握手成功不代表飞书账号端到端验证成功。
@@ -70,7 +70,7 @@ npm run setup
 - 旧授权进程经 PID、父 PID、创建时间、命令行和锁 nonce 核验后停止；失败验证进程已退出，其所属残留锁经核验后清理。保留现有 OAuth 数据，未停止其他 Node/MCP 服务。
 - `npm test`：**88 / 88 通过，0 失败，0 跳过**；`npm run test:integration`：**16 个入口、15 个 Docs 原生工具、15 个 Blocks 原生工具，进程锁正常释放**。日志：[oauth-shutdown-tests.log](../validation/oauth-shutdown-tests.log)、[oauth-shutdown-smoke.log](../validation/oauth-shutdown-smoke.log)。本次未修改上游源码/桥接或跳过类型检查，使用已验证的上游构建。
 - **真实只读连接验证通过**：复用本机持久化 OAuth，经 stdio MCP 调用 `kb_list_wikis` 成功，当前账号返回 **0 个可见 Wiki 空间**；未据此推断云文档数量。带一个未发送 HTTP 请求的 TCP 预连接时，MCP 关闭用时 **256 ms**，进程锁正常释放。机器可读证据：[live-connection.json](../validation/live-connection.json)。
-- 已将全局 Codex 配置中的 `feishu-knowledge-private` 改为 `enabled = true`，保持本地 stdio 和两个原生写入开关关闭。测试辅助进程均已退出；重新加载 Codex 后由客户端启动服务。
+- 已将全局 Codex 配置中的飞书 MCP 服务改为 `enabled = true`，保持本地 stdio 和两个原生写入开关关闭。测试辅助进程均已退出；重新加载 Codex 后由客户端启动服务。
 - **未验证**：Token 到期刷新、具体文档/Wiki 节点/媒体读写、两个上游完整测试套件。没有进行任何远端文档写入或删除。历史 `vendor/validation-report.json` 的 `liveFeishu: false` 对应首次安装冒烟；本节与独立真实连接报告记录其后的账号验证，不覆盖历史事实。
 
 实现选择参考 [Node.js HTTP 关闭接口文档](https://nodejs.org/api/http.html#servercloseallconnections)：没有采用会中断活动请求的 `closeAllConnections()`，而是以本机回归测试限定清理范围。
@@ -87,3 +87,25 @@ npm run setup
 - 固定上游源码、许可证和已有修改均保留；新补丁已进入安装脚本和 `upstreams.lock.json`。源码校验清单同步更新，根目录 ZIP 保留原始交付快照，未重新打包。
 
 已启动的 MCP 进程需要重新加载，才会使用新的构建产物；本次没有擅自停止其他客户端持有的 MCP 进程。
+
+## 命名与文案调整验证 · 2026-09-12
+
+- README、项目说明和工具提示统一使用中性名称。包名为 `feishu-knowledge-mcp`，MCP 握手名称和新配置生成器的服务名为 `feishu-knowledge`。
+- `npm test`：**98 / 98 通过，exit 0**。`npm run test:integration`：**4 / 4 上游回归通过，exit 0**；stdio 冒烟新增服务名称断言，仍确认 16 个入口、15 个 Docs 工具、15 个 Blocks 工具及进程锁释放。
+- 单账号身份键、OAuth 存储、回调限制、原生写入开关和禁止发布配置未变；没有改动客户端已有服务别名、真实账号或飞书文档。已有别名仍可使用，无需重新授权。
+- 本次未修改上游运行逻辑，未重新构建上游；原始测试日志和交付 ZIP 保留历史记录，不重写为本次结果。源码校验清单已同步。
+
+## 新建文档真实冒烟 · 2026-09-12 10:44～10:48（北京时间）
+
+**结论：未全部通过。** 本次使用当前真实账号和现有构建，未改动核心源码，也未用离线测试替代端到端结果。
+
+- 按用户要求新建独立测试文档：[Feishu MCP 冒烟测试 2026-09-12 10:44:23 984a956e](https://feishu.cn/docx/NAJhdIBxYoNxbrxCuPRcltesnhd)。通过 `docs__feishu_upload_markdown` 创建，媒体上传与远程下载全部关闭；未修改或复制课程大纲内容。
+- `kb_read` 与 `blocks__get_feishu_document_info` 均读取成功：初始 revision **2**，共 **4 个 Block**，标题与测试段落符合预设内容。真实 MCP 握手名称为 `feishu-knowledge`。
+- 仅针对该新文档和指定测试段落，通过本次子进程环境设置 `FEISHU_LIVE_DOCUMENT`、`FEISHU_LIVE_EDIT_BLOCK`、`FEISHU_LIVE_ALLOW_WRITE=true`，执行现有 **`npm run test:live`，exit 1**。原生写入只在创建文档的独立进程中临时允许，后续测试保持关闭；未修改 `.env` 或客户端的持久配置。
+- 写入计划 `0c8a5272-d119-47a8-8372-03b1189b1668` 获得 API 确认 revision **3**，但紧接着的读回检查报 **`SNAPSHOT_CONFLICT`**，计划保留为 `needs_inspection`。测试脚本因此在写入断言处停止，**未执行其自动回滚步骤**。
+- 没有重试该写入。随后独立只读核对 revision **3**：测试后缀确已写入，只有目标段落改变，其他 Block 无变化、无缺失，文本和行内样式与计划预期一致。
+- 在上述核对后，为恢复本次测试内容另建反向文本计划 `e885e202-d813-45e1-9280-cefccc938223`，未把失败计划强行改为 applied。恢复请求获得 API 确认 revision **4**，即时复读同样报 `SNAPSHOT_CONFLICT`，第二份计划也保留为 `needs_inspection`，没有重放。
+- 最终独立只读验证 revision **4**：**全部 4 个 Block 与初始测试快照深度相等**，包括文本、样式、ID 与结构，测试后缀已去除。测试文档保留，未删除任何文档；测试进程退出，单实例锁已释放，持久化原生写入开关未变。
+- 可确认创建、两条读取路径及实际文本写入可用；**不能据此宣称自动写后校验/自动回滚链路通过**。版本冲突的具体根因仍待定位，本次没有放宽版本保护或修改现有门禁。
+
+汇总证据：[live-smoke-20260912-984a956e.json](../validation/live-smoke-20260912-984a956e.json)。本机详细检查点与原始命令日志分别为 `.local/exports/smoke-new-document-984a956e.json`、`.local/exports/smoke-new-document-984a956e.log`；不含应用密钥或 OAuth Token。

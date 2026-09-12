@@ -4,7 +4,7 @@ export function gitBlobHash(text) {
   return createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
 }
 const docsAddition = `
-  // FUSION_SOURCE_SEAM_V1: shared personal OAuth, added by the local fusion project.
+  // FUSION_SOURCE_SEAM_V1: shared OAuth, added by the fusion project.
   private fusionTokenPromise: Promise<string> | null = null;
   public async fusionGetAccessToken(): Promise<string> {
     if (this.fusionTokenPromise) return this.fusionTokenPromise;

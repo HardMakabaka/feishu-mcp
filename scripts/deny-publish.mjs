@@ -1,2 +1,2 @@
-console.error('This is a private local project. Publishing is deliberately disabled.');
+console.error('Publishing is disabled for this project.');
 process.exit(1);
