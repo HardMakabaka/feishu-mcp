@@ -113,7 +113,8 @@ export class KnowledgeService {
       plan.status='acknowledged'; await this.store.put('plans',plan.id,plan);
       invariant(Number.isSafeInteger(result.document_revision_id) && result.document_revision_id>=plan.revisionId,
         'WRITE_REVISION_UNAVAILABLE', 'The write acknowledgement did not identify a valid document revision; do not repeat the write');
-      const after=await this.api.snapshot(plan.documentId);
+      const after=await this.api.snapshot(plan.documentId,{expectedRevision:result.document_revision_id});
+      if(after.verification)plan.verification=after.verification;
       invariant(after.revisionId===result.document_revision_id, 'POST_WRITE_REVISION_CONFLICT',
         'Document changed after the acknowledged write. Inspect it before making or rolling back further edits.',
         {expected:result.document_revision_id,actual:after.revisionId});

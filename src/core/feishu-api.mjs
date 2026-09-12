@@ -21,26 +21,27 @@ export class FeishuApi {
   constructor({ tokenProvider, fetchImpl = globalThis.fetch, timeoutMs = 30000, sleepImpl = sleep }) {
     this.tokenProvider = tokenProvider; this.fetch = fetchImpl; this.timeoutMs = timeoutMs; this.sleep = sleepImpl;
   }
-  async request(method, path, { query = {}, body } = {}) {
+  async request(method, path, { query = {}, body, signal, retryReads = true } = {}) {
     invariant(path.startsWith('/') && !path.startsWith('//') && !path.includes('..'), 'INVALID_API_PATH', 'Invalid API path');
     const url = new URL(API_BASE + path);
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
     const readOnly = method === 'GET';
+    const canRetry = readOnly && retryReads;
     for (let attempt = 0; ; attempt++) {
       const token = await this.tokenProvider();
       let response;
       try {
         response = await this.fetch(url, {
-          method, redirect: 'error', signal: AbortSignal.timeout(this.timeoutMs),
+          method, redirect: 'error', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(this.timeoutMs)]) : AbortSignal.timeout(this.timeoutMs),
           headers: { Authorization: `Bearer ${token}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
           ...(body !== undefined ? { body: JSON.stringify(body) } : {})
         });
       } catch (e) {
-        if (readOnly && attempt < 2) { await this.sleep(300 * 2 ** attempt); continue; }
+        if (canRetry && !signal?.aborted && attempt < 2) { await this.sleep(300 * 2 ** attempt); continue; }
         throw new FusionError(readOnly ? 'NETWORK_ERROR' : 'WRITE_OUTCOME_UNKNOWN',
           readOnly ? 'Feishu request failed' : 'The write may have reached Feishu. Inspect the document before retrying.', { method, path, cause: e.name });
       }
-      if (readOnly && (response.status === 429 || response.status >= 500) && attempt < 2) {
+      if (canRetry && !signal?.aborted && (response.status === 429 || response.status >= 500) && attempt < 2) {
         await this.sleep(Math.min(5000, Number(response.headers.get('retry-after') || 0) * 1000 || 500 * 2 ** attempt)); continue;
       }
       let json;
@@ -63,16 +64,53 @@ export class FeishuApi {
     invariant(data.node.obj_token, 'INVALID_API_RESPONSE', 'Wiki node has no document token');
     return { documentId: data.node.obj_token, wikiNodeToken: ref.token, wikiSpaceId: data.node.space_id };
   }
-  async meta(documentId) {
-    const data = await this.request('GET', `/docx/v1/documents/${encodeURIComponent(documentId)}`);
+  async meta(documentId, options) {
+    const data = await this.request('GET', `/docx/v1/documents/${encodeURIComponent(documentId)}`, options);
     const doc = data.document;
     const revision = Number(doc?.revision_id);
     invariant(doc && Number.isSafeInteger(revision) && revision >= 0, 'REVISION_UNAVAILABLE', 'Feishu did not return a valid revision; refusing an unguarded edit');
     return { documentId: doc.document_id || documentId, title: doc.title || '', revisionId: revision };
   }
-  async snapshot(input) {
+  async waitForRevision(documentId, expectedRevision, state, phase) {
+    const delays = [200, 400, 800, 1600];
+    const details = () => ({ expectedRevision, phase, retries: state.retries, observations: state.observations,
+      waitedMs: Math.round(5000 - state.remainingMs) });
+    const timeout = () => new FusionError('WRITE_VISIBILITY_TIMEOUT',
+      'The acknowledged revision is not yet visible. Inspect the checkpoint; do not repeat the write.', details());
+    while (state.remainingMs > 0) {
+      const signal = AbortSignal.timeout(Math.max(1, Math.ceil(state.remainingMs)));
+      const started = performance.now();
+      let meta;
+      try {
+        // A single bounded GET: nested transport retries must not extend this budget.
+        meta = await this.meta(documentId, { signal, retryReads: false });
+      } catch (error) {
+        state.remainingMs -= performance.now() - started;
+        if (signal.aborted) throw timeout();
+        throw error;
+      }
+      state.remainingMs -= performance.now() - started;
+      state.observations.push({ phase, revisionId: meta.revisionId });
+      invariant(meta.revisionId <= expectedRevision, 'POST_WRITE_REVISION_CONFLICT',
+        'A newer revision was observed after the write; refusing to accept concurrent changes.', details());
+      if (meta.revisionId === expectedRevision) return meta;
+      if (state.retries >= delays.length || state.remainingMs <= 0) throw timeout();
+      const delay = Math.min(delays[state.retries++], state.remainingMs);
+      const sleepStarted = performance.now();
+      await this.sleep(delay);
+      state.remainingMs -= Math.max(delay, performance.now() - sleepStarted);
+    }
+    throw timeout();
+  }
+  async snapshot(input, { expectedRevision } = {}) {
+    invariant(expectedRevision === undefined || (Number.isSafeInteger(expectedRevision) && expectedRevision >= 0),
+      'INVALID_EXPECTED_REVISION', 'Expected revision must be a non-negative integer');
     const resolved = await this.resolveDocument(input);
-    const meta = await this.meta(resolved.documentId);
+    // The two metadata checks share a visibility budget; normal block pagination
+    // is not part of this delay budget and retains its existing HTTP timeouts.
+    const state = { remainingMs: 5000, retries: 0, observations: [] };
+    const meta = expectedRevision === undefined ? await this.meta(resolved.documentId)
+      : await this.waitForRevision(resolved.documentId, expectedRevision, state, 'before_blocks');
     const blocks = []; let pageToken; const seen = new Set();
     do {
       const data = await this.request('GET', `/docx/v1/documents/${encodeURIComponent(resolved.documentId)}/blocks`, {
@@ -85,9 +123,13 @@ export class FeishuApi {
       invariant(data.page_token && !seen.has(data.page_token), 'PAGINATION_LOOP', 'Feishu pagination did not advance');
       seen.add(data.page_token); pageToken = data.page_token;
     } while (true);
-    const after = await this.meta(resolved.documentId);
-    invariant(after.revisionId === meta.revisionId, 'SNAPSHOT_CONFLICT', 'Document changed while being read. Read it again.');
-    return { ...resolved, ...meta, blocks, fetchedAt: new Date().toISOString() };
+    const after = expectedRevision === undefined ? await this.meta(resolved.documentId)
+      : await this.waitForRevision(resolved.documentId, expectedRevision, state, 'after_blocks');
+    invariant(after.revisionId === meta.revisionId, 'SNAPSHOT_CONFLICT', 'Document changed while being read. Read it again.',
+      { beforeRevision: meta.revisionId, afterRevision: after.revisionId });
+    return { ...resolved, ...meta, blocks, fetchedAt: new Date().toISOString(),
+      ...(expectedRevision === undefined ? {} : { verification: { expectedRevision, retries: state.retries,
+        observations: state.observations, waitedMs: Math.round(5000 - state.remainingMs) } }) };
   }
   async patchText(documentId, revisionId, edits) {
     return this.request('PATCH', `/docx/v1/documents/${encodeURIComponent(documentId)}/blocks/batch_update`, {

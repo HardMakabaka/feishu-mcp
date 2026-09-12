@@ -1,0 +1,44 @@
+{
+  "status": "failed",
+  "verifiedAt": "2026-09-12T02:48:55.397Z",
+  "server": {
+    "name": "feishu-knowledge",
+    "version": "0.2.0"
+  },
+  "documentId": "NAJhdIBxYoNxbrxCuPRcltesnhd",
+  "url": "https://feishu.cn/docx/NAJhdIBxYoNxbrxCuPRcltesnhd",
+  "title": "Feishu MCP 冒烟测试 2026-09-12 10:44:23 984a956e",
+  "create": true,
+  "safeKbRead": true,
+  "blocksRead": true,
+  "writeAcknowledgedAndReadBack": true,
+  "automatedLiveTestExitCode": 1,
+  "failure": "SNAPSHOT_CONFLICT during immediate post-write verification",
+  "automaticRollbackNotReached": true,
+  "restoreViaNewGuardedPlan": true,
+  "fixtureFullyRestored": true,
+  "finalRevision": 4,
+  "blockCount": 4,
+  "plans": [
+    {
+      "id": "0c8a5272-d119-47a8-8372-03b1189b1668",
+      "status": "needs_inspection",
+      "beforeRevision": 2,
+      "ackRevision": 3,
+      "error": "SNAPSHOT_CONFLICT"
+    },
+    {
+      "id": "e885e202-d813-45e1-9280-cefccc938223",
+      "status": "needs_inspection",
+      "beforeRevision": 3,
+      "ackRevision": 4,
+      "error": "SNAPSHOT_CONFLICT"
+    }
+  ],
+  "existingDocumentsTouched": false,
+  "documentDeleted": false,
+  "persistentNativeWriteSettingsUnchanged": true,
+  "processLockReleased": true,
+  "checkpoint": ".local/exports/smoke-new-document-984a956e.json",
+  "liveTestLog": ".local/exports/smoke-new-document-984a956e.log"
+}

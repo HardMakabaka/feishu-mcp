@@ -2,7 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {context,paragraph} from './helpers.mjs';
 import {blockText} from '../src/core/blocks.mjs';
+import {FusionError} from '../src/core/errors.mjs';
 const edit={blockId:'p1',expectedText:'Old text',newText:'New text'};
+
+test('only post-write verification receives the acknowledged revision',async t=>{
+ const c=await context(t);const snapshot=c.api.snapshot.bind(c.api);const options=[];
+ c.api.snapshot=async(id,opts)=>{options.push(opts);return snapshot(id);};
+ const p=await c.knowledge.planPatch('doc1',[edit]);assert.equal((await c.knowledge.apply(p.id)).status,'applied');
+ assert.deepEqual(options,[undefined,undefined,{expectedRevision:8}]);assert.equal(c.api.calls.length,1);
+});
+
+test('visibility timeout preserves acknowledgement and never repeats a write',async t=>{
+ const c=await context(t);const snapshot=c.api.snapshot.bind(c.api);
+ c.api.snapshot=async(id,opts)=>{if(opts?.expectedRevision!==undefined)throw new FusionError('WRITE_VISIBILITY_TIMEOUT','not visible',{expectedRevision:opts.expectedRevision,retries:4});return snapshot(id);};
+ const p=await c.knowledge.planPatch('doc1',[edit]);const result=await c.knowledge.apply(p.id);
+ assert.equal(result.status,'needs_inspection');assert.equal(result.apiResult.document_revision_id,8);
+ assert.equal(result.error.error,'WRITE_VISIBILITY_TIMEOUT');assert.equal(result.error.details.retries,4);
+ await assert.rejects(()=>c.knowledge.apply(p.id),e=>e.code==='PLAN_NOT_RETRYABLE');assert.equal(c.api.calls.length,1);
+});
 
 test('preview performs no remote write and saves before snapshot',async t=>{
  const c=await context(t);const p=await c.knowledge.planPatch('doc1',[edit]);assert.equal(c.api.calls.length,0);assert.equal(p.status,'planned');assert(await c.store.get('snapshots',p.snapshotId));

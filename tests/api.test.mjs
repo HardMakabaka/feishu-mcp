@@ -58,3 +58,45 @@ test('Wiki non-docx objects are rejected',async()=>{
 test('request errors do not include the authorization header',async()=>{
  const a=api(async()=>{throw new Error('network');});try{await a.request('POST','/test');}catch(e){assert(!JSON.stringify(e.details).includes('secret-token'));}
 });
+
+function visibilityApi(revisions){
+ const delays=[],queries=[];let reads=0;
+ const a=new FeishuApi({tokenProvider:async()=>'secret-token',sleepImpl:async ms=>{delays.push(ms);},fetchImpl:async(url,options)=>{
+  assert.equal(options.method,'GET');queries.push(String(url));
+  if(url.pathname.endsWith('/blocks'))return json({code:0,data:{items:[{block_id:'p'}],has_more:false}});
+  return json({code:0,data:{document:{document_id:'doc1',revision_id:revisions[Math.min(reads++,revisions.length-1)]}}});
+ }});return{a,delays,queries,reads:()=>reads};
+}
+test('post-write snapshot waits for the acknowledged revision and pins block reads',async()=>{
+ const c=visibilityApi([7,7,8,8]);const s=await c.a.snapshot('doc1',{expectedRevision:8});
+ assert.equal(s.revisionId,8);assert.deepEqual(c.delays,[200,400]);
+ assert(c.queries.filter(q=>q.includes('/blocks')).every(q=>q.includes('document_revision_id=8')));
+ assert.equal(s.verification.expectedRevision,8);assert.equal(s.verification.retries,2);
+});
+test('post-write final metadata can lag without rereading or rewriting blocks',async()=>{
+ const c=visibilityApi([8,7,8]);const s=await c.a.snapshot('doc1',{expectedRevision:8});
+ assert.equal(s.revisionId,8);assert.equal(c.queries.filter(q=>q.includes('/blocks')).length,1);assert.deepEqual(c.delays,[200]);
+});
+test('post-write snapshots reject a newer revision before or after reading blocks',async()=>{
+ for(const revisions of [[9],[7,9],[8,9]]){
+  const c=visibilityApi(revisions);await assert.rejects(()=>c.a.snapshot('doc1',{expectedRevision:8}),e=>e.code==='POST_WRITE_REVISION_CONFLICT'&&e.details.expectedRevision===8&&e.details.observations.at(-1).revisionId===9);
+ }
+});
+test('post-write visibility timeout is bounded and includes observed revisions',async()=>{
+ const c=visibilityApi([7]);await assert.rejects(()=>c.a.snapshot('doc1',{expectedRevision:8}),e=>e.code==='WRITE_VISIBILITY_TIMEOUT'&&e.details.retries===4&&e.details.observations.length===5);
+ assert.equal(c.reads(),5);assert.deepEqual(c.delays,[200,400,800,1600]);assert(!c.queries.some(q=>q.includes('/blocks')));
+});
+test('post-write visibility does not retry permission failures',async()=>{
+ let calls=0;const a=api(async()=>{calls++;return json({code:999,msg:'permission denied'},403);});
+ await assert.rejects(()=>a.snapshot('doc1',{expectedRevision:8}),e=>e.code==='FEISHU_API_ERROR');assert.equal(calls,1);
+});
+
+test('visibility budget aborts a slow metadata GET without transport retries',async()=>{
+ let calls=0,aborted=false;
+ const a=api(async(url,{signal})=>{calls++;return new Promise((resolve,reject)=>{
+  const timer=setTimeout(()=>resolve(json({code:0,data:{document:{document_id:'doc1',revision_id:7}}})),1000);
+  signal.addEventListener('abort',()=>{aborted=true;clearTimeout(timer);reject(signal.reason);},{once:true});
+ });});
+ await assert.rejects(()=>a.waitForRevision('doc1',8,{remainingMs:25,retries:0,observations:[]},'before_blocks'),e=>e.code==='WRITE_VISIBILITY_TIMEOUT');
+ assert.equal(calls,1);assert.equal(aborted,true);
+});
